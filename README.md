@@ -3,6 +3,13 @@
 > Really, you're writing an R package for the Twitter API? You didn't bother to check and find out that there's already this excellent rtweet package out there?
 
 I did, but the fancy new [Academic Twitter license](https://developer.twitter.com/en/solutions/academic-research) works with API V2, and that's not yet supported. In time it probably will, but in the meantime I and some colleagues needed this, so there.
+You can install the package from GitHub.
+
+```{r}
+library(remotes)
+install_github('kasperwelbers/twitterAcademic')
+```
+
 
 There are really only two functions of notice, but they should be all you need if you just want to use the full archive search.
 The first function let's you store the Bearer Token (see details on how to get this token in the `?set_bearer_token` documentation).
