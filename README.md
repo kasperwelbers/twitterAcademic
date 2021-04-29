@@ -20,7 +20,7 @@ It is designed to easily handle big downloads, possibly over multiple sessions.
 * A folder called `twitterAcademicData` will be created in your working directory, in which all search results are stored in CSV files. 
 * Every unique query (including start and end time) is stored as a separate CSV.
 * If you crash along the way, or need to shutdown your computer, you can pick-up the download right where it left of when you use the same query. 
-* The Academic API has pretty OK limits. You can do 300 batches of 500 tweets every 15 minutes, and you should have a total of 10.000.000 tweets per month. You can see how much you have left on your [dashboard](https://developer.twitter.com/en/portal/dashboard)
+* The Academic API has pretty OK limits. You can do 300 batches of 500 tweets every 15 minutes, and you should have a total of 10.000.000 tweets per month. You can see how much you have left on your [dashboard](https://developer.twitter.com/en/portal/dashboard). The `twitter_archive_search` function manages the waiting times, so in theory you should be able to just keep it running for days.
 * Once finished, you will get a tibble with the tweets. 
 
 ```{r}
