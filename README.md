@@ -2,7 +2,7 @@
 
 > Really, you're writing an R package for the Twitter API? You didn't bother to check and find out that there's already this excellent rtweet package out there?
 
-I did, but the fancy new [Academic Twitter license](https://developer.twitter.com/en/solutions/academic-research) works with API V2, and that's not yet supported. In time it probably will, but in the meantime I and some colleagues needed this, so there.
+We did, but the fancy new [Academic Twitter license](https://developer.twitter.com/en/solutions/academic-research) works with API V2, and that's not yet supported. In time it probably will, but in the meantime we needed this, so there.
 You can install the package from GitHub.
 
 ```{r}
@@ -42,4 +42,4 @@ d = twitter_archive_search("your query"", start_time="2020-01-01", end_time="202
 # Disclaimer
 
 Rome wasn't built in a day. This package has nothing to do with Rome, but it was built in a day, and it shows. 
-I have no ambition to develop an R package for the Twitter API, but if you run into bugs please do let me know and I will maintain this thing as long as needed (i.e. when rtweet tackles V2). I might also implement some additional features, since the groundwork is there anyway.
+We have no deep ambition to develop an R package for the Twitter API, but if you run into bugs please do let me know and we will maintain this thing as long as needed (i.e. when rtweet tackles V2). We might also implement some additional features, since the groundwork is there anyway, so feel free to ask.
