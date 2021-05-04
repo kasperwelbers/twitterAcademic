@@ -24,6 +24,7 @@ twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=g
     "cashtags_json","media_keys_json")
 
   if (length(query) > 1) stop('Can only provide 1 query at a time')
+  print(nchar(query))
 
   start_time = prepare_time_arg(start_time)
   end_time = prepare_time_arg(end_time, TRUE)
@@ -106,8 +107,9 @@ twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=g
 
 twitter_get <- function(endpoint, ..., perseverance=10) {
   query = list(...)
-  #query = query[!sapply(query, is.null)]
-  #query = paste(paste0(names(query), '=', as.character(query)),collapse='&')
+  query = query[!sapply(query, is.null)]
+  qs = paste(paste0(names(query), '=', as.character(query)),collapse='&')
+  message(nchar(qs))
   #url = sprintf('https://api.twitter.com/2/%s?%s', endpoint, query)
   url = sprintf('https://api.twitter.com/2/%s', endpoint)
 
@@ -134,6 +136,11 @@ twitter_get <- function(endpoint, ..., perseverance=10) {
     } else if (response$status_code == 503) {
       Sys.sleep(5)
       next
+    } else if (response$status_code == 400) {
+      mes = httr::content(response, as = "text")
+      mes = jsonlite::fromJSON(mes, flatten = F)
+      mes = paste(paste(names(mes$errors), as.character(mes$errors), sep=':\n'), collapse='\n\n')
+      stop(paste0("Oh shit, Twitter think's your request is bad (400 response status). This probably means something was wrong with your query\n\n", mes))
     } else {
       message(sprintf("Something went wrong! Got this non-ok status code here: %s.\nFor now we'll just wait a few seconds and try again, but if this keeps failing let me know", response$status_code))
       Sys.sleep(5)
