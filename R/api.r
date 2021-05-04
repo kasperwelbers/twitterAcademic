@@ -106,9 +106,11 @@ twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=g
 
 twitter_get <- function(endpoint, ..., perseverance=10) {
   query = list(...)
-  query = query[!sapply(query, is.null)]
-  query = paste(paste0(names(query), '=', as.character(query)),collapse='&')
-  url = sprintf('https://api.twitter.com/2/%s?%s', endpoint, query)
+  #query = query[!sapply(query, is.null)]
+  #query = paste(paste0(names(query), '=', as.character(query)),collapse='&')
+  #url = sprintf('https://api.twitter.com/2/%s?%s', endpoint, query)
+  url = sprintf('https://api.twitter.com/2/%s', endpoint)
+
 
   bearer_token = tryCatch(readRDS(token_file()), error=function(e) NULL, warning=function(w) NULL)
   if (is.null(bearer_token)) stop('You did not yet set a Bearer token. See ?set_bearer_token for more information')
@@ -117,7 +119,7 @@ twitter_get <- function(endpoint, ..., perseverance=10) {
   i = 0
   while (i < perseverance) {
     i = i + 1
-    response = httr::GET(url = url,
+    response = httr::GET(url = url, query=query,
       httr::add_headers(.headers = headers))
     if (response$status_code == 200) break
     if (response$status_code == 429) {
@@ -133,7 +135,7 @@ twitter_get <- function(endpoint, ..., perseverance=10) {
       Sys.sleep(5)
       next
     } else {
-      warning(sprintf("Something went wrong! Got this non-ok status code here: %s.\nFor now we'll just wait a few seconds and try again, but if this keeps failing let me know", response$status_code))
+      message(sprintf("Something went wrong! Got this non-ok status code here: %s.\nFor now we'll just wait a few seconds and try again, but if this keeps failing let me know", response$status_code))
       Sys.sleep(5)
     }
   }
