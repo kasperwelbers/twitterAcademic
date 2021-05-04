@@ -1,8 +1,11 @@
 #' Collect tweets from the Twitter full search API
 #'
 #' @param query           A Twitter API query (https://developer.twitter.com/en/docs/twitter-api/tweets/search/integrate/build-a-query)
-#' @param start_time      A date (Date, POSIXct, or valid datestring) for the start time (i.e. earliest date).
-#' @param end_time        Like start_time, but for the end time (i.e. most recent date). If a date without time is given (like '2010-01-01'), it will be interpreted as the end of the given day ('2010-01-01 23:59:59')
+#' @param start_time      A date (Date, POSIXct, or valid datestring) for the start time (i.e. earliest date). This is required.
+#' @param end_time        Optionally, the end time (i.e. most recent date). If a date without time is given (like '2010-01-01'),
+#'                        it will be interpreted as the end of the given day ('2010-01-01 23:59:59'). If no end_time is given, the CSV file will note end_time
+#'                        as "endoftime", and the query can be repeated to update the csv with recent entries. A CSV file will then never be marked as _finished,
+#'                        so running this function would always call the API to check for updates. If you just want the current results, use read_finished=T.
 #' @param path            This function will create a folder with csv files to store the results. Default location is the current working directory
 #' @param read_finished   If TRUE, read the currently finished tweets instead of continuing the data collection (this only makes sense if the query was performed before, but didn't yet finish)
 #' @param just_download   Maybe you just want to download the tweets to a csv without immediately reading them. This argument has your back.
@@ -10,12 +13,15 @@
 #' @param perseverance    If something goes wrong in the GET request, it will try again 10 times, with some waiting times based on the reason. There should be no reason to increase this
 #'                        (if the problem is the API limit, it will wait the exact required time once), but if you want to make sure that your data is running, and you don't mind bothering
 #'                        Twitter every few seconds, you might as well crank it up to Infinity.
+#' @param progressbar     If TRUE (default) show progress bar. This measures progress as the time difference between the start and end date, so for long period searchers
+#'                        it might speed up or slow down depending on how many tweets there are over time.
+#'
 #'
 #' @return
 #' @export
 #'
 #' @examples
-twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=getwd(), read_finished=F, just_download=F, pagesize=500, perseverance=10) {
+twitter_archive_search <- function(query, start_time, end_time=NULL, path=getwd(), read_finished=F, just_download=F, pagesize=500, perseverance=10, progressbar=TRUE) {
   if (pagesize > 500) stop('pagesize is limited to max 500')
   tweet.fields='public_metrics,created_at,author_id,attachments,conversation_id,entities,geo,id,in_reply_to_user_id,lang,possibly_sensitive,referenced_tweets,reply_settings,source,withheld'
   save_columns = c("id", "author_id","source","reply_settings","conversation_id","text","created_at","lang","possibly_sensitive",
@@ -23,18 +29,14 @@ twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=g
     "referenced_tweets_json","mentions_json","urls_json","hashtags_json","annotations_json",
     "cashtags_json","media_keys_json")
 
-
+  if (is.null(start_time)) stop('Start time cannot be NULL')
   if (length(query) > 1) stop('Can only provide 1 query at a time')
-
-  start_time = prepare_time_arg(start_time)
-  end_time = prepare_time_arg(end_time, TRUE)
-  total_seconds = as.numeric(difftime(end_time, start_time, units='secs'))  ## for progress bar
 
   ## make a very likely to be unique name for the current query (including time frame)
   csv_file = gsub(' ', '_', query)
   csv_file = gsub('[^[:alnum:]]', '', csv_file)
   csv_file = paste(csv_file,
-    if (!is.null(start_time)) start_time else 'beginningoftime',
+    if (!is.null(start_time)) start_time else 'firsttweet',
     if (!is.null(end_time)) end_time else 'endoftime', sep='_')
   csv_file = paste0(csv_file, '.csv')
 
@@ -44,8 +46,15 @@ twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=g
   csv_file = file.path(folder, csv_file)
 
   ## finished csv files are marked as finished (when the download loop below is finished)
-  finished_csv_file = gsub('\\.csv', '_finished\\.csv', csv_file)
-  if (file.exists(finished_csv_file)) return(readr::read_csv(finished_csv_file, col_types=readr::cols()))
+  if (!is.null(end_time)) {
+    finished_csv_file = gsub('\\.csv', '_finished\\.csv', csv_file)
+    if (file.exists(finished_csv_file)) return(readr::read_csv(finished_csv_file, col_types=readr::cols()))
+  } else finished_csv_file = csv_file
+
+  ## prepare start/end time
+  start_time = prepare_time_arg(start_time)
+  end_time = prepare_time_arg(end_time, TRUE)
+  total_seconds = as.numeric(difftime(end_time, start_time, units='secs'))  ## for progress bar
 
   ## read the most recent id in the current data. This way the loop continues from the most recent tweet
   until_id = NULL
@@ -59,15 +68,17 @@ twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=g
     if (read_finished) stop("Can't really read the 'finished' tweets if you haven't really started yet, now can you?")
   }
 
-  start_time_string = format(start_time, '%Y-%m-%dT%H:%M:%SZ')
-  end_time_string = format(end_time, '%Y-%m-%dT%H:%M:%SZ')
+  start_time_string = format(start_time, '%Y-%m-%dT%H:%M:%SZ', tz = "GMT", usetz=FALSE)
+  end_time_string = format(end_time, '%Y-%m-%dT%H:%M:%SZ', tz = "GMT", usetz=FALSE)
 
   next_token = NULL
   req_time = Sys.time() ## twitter likes 1 sec breaks between requests
 
-  pb <- txtProgressBar(min = 0, max = total_seconds, style = 3)
-  time_remaining = as.numeric(difftime(end_time, start_time, units='secs')) ## end time can have been updated
-  setTxtProgressBar(pb, total_seconds - time_remaining)
+  if (progressbar) {
+    pb <- txtProgressBar(min = 0, max = total_seconds, style = 3)
+    time_remaining = as.numeric(difftime(end_time, start_time, units='secs')) ## end time can have been updated
+    setTxtProgressBar(pb, total_seconds - time_remaining)
+  }
 
   while (TRUE) {
     time_since_req = as.numeric(difftime(Sys.time(), req_time, units = 'secs'))
@@ -83,9 +94,11 @@ twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=g
       if (!is.null(until_id)) d = d[d$id < until_id,]
       if (nrow(d) > 0) {
 
-        progress_date = min(as.POSIXct(d$created_at, format='%Y-%m-%dT%H:%M:%OSZ'))
-        time_remaining = as.numeric(difftime(progress_date, start_time, units='secs'))
-        setTxtProgressBar(pb, total_seconds - time_remaining)
+        if (progressbar) {
+          progress_date = min(as.POSIXct(d$created_at, format='%Y-%m-%dT%H:%M:%OSZ'))
+          time_remaining = as.numeric(difftime(progress_date, start_time, units='secs'))
+          setTxtProgressBar(pb, total_seconds - time_remaining)
+        }
 
         for (col in save_columns) if (!col %in% colnames(d)) d[[col]] = NA
         if (!file.exists(csv_file))
@@ -108,9 +121,7 @@ twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=g
 twitter_get <- function(endpoint, ..., perseverance=10) {
   query = list(...)
   query = query[!sapply(query, is.null)]
-  qs = paste(paste0(names(query), '=', as.character(query)),collapse='&')
   url = sprintf('https://api.twitter.com/2/%s', endpoint)
-
 
   bearer_token = tryCatch(readRDS(token_file()), error=function(e) NULL, warning=function(w) NULL)
   if (is.null(bearer_token)) stop('You did not yet set a Bearer token. See ?set_bearer_token for more information')
@@ -176,7 +187,9 @@ get_end_point <- function(csv_file) {
 }
 
 prepare_time_arg <- function(time, end_time=F) {
+  if (is.null(time) && end_time) time = Sys.time() - as.difftime(10, units = 'secs')
   if (is.null(time)) return(NULL)
+
   time = as.POSIXct(time)
   if (!methods::is(time, 'POSIXct')) stop('start/end time needs to be a Date, POSIXct, or valid date string')
   if (end_time && format(time, '%H%M%S') == '000000') time = time + as.difftime(24*60*60-1, units = 'secs')

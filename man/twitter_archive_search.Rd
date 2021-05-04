@@ -6,21 +6,25 @@
 \usage{
 twitter_archive_search(
   query,
-  start_time = NULL,
+  start_time,
   end_time = NULL,
   path = getwd(),
   read_finished = F,
   just_download = F,
   pagesize = 500,
-  perseverance = 10
+  perseverance = 10,
+  progressbar = TRUE
 )
 }
 \arguments{
 \item{query}{A Twitter API query (https://developer.twitter.com/en/docs/twitter-api/tweets/search/integrate/build-a-query)}
 
-\item{start_time}{A date (Date, POSIXct, or valid datestring) for the start time (i.e. earliest date).}
+\item{start_time}{A date (Date, POSIXct, or valid datestring) for the start time (i.e. earliest date). This is required.}
 
-\item{end_time}{Like start_time, but for the end time (i.e. most recent date). If a date without time is given (like '2010-01-01'), it will be interpreted as the end of the given day ('2010-01-01 23:59:59')}
+\item{end_time}{Optionally, the end time (i.e. most recent date). If a date without time is given (like '2010-01-01'),
+it will be interpreted as the end of the given day ('2010-01-01 23:59:59'). If no end_time is given, the CSV file will note end_time
+as "endoftime", and the query can be repeated to update the csv with recent entries. A CSV file will then never be marked as _finished,
+so running this function would always call the API to check for updates. If you just want the current results, use read_finished=T.}
 
 \item{path}{This function will create a folder with csv files to store the results. Default location is the current working directory}
 
@@ -33,6 +37,9 @@ twitter_archive_search(
 \item{perseverance}{If something goes wrong in the GET request, it will try again 10 times, with some waiting times based on the reason. There should be no reason to increase this
 (if the problem is the API limit, it will wait the exact required time once), but if you want to make sure that your data is running, and you don't mind bothering
 Twitter every few seconds, you might as well crank it up to Infinity.}
+
+\item{progressbar}{If TRUE (default) show progress bar. This measures progress as the time difference between the start and end date, so for long period searchers
+it might speed up or slow down depending on how many tweets there are over time.}
 }
 \value{
 
