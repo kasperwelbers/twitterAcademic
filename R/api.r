@@ -21,10 +21,10 @@ twitter_archive_search <- function(query, start_time=NULL, end_time=NULL, path=g
   save_columns = c("id", "author_id","source","reply_settings","conversation_id","text","created_at","lang","possibly_sensitive",
     "in_reply_to_user_id","retweet_count","reply_count","like_count","quote_count","place_id",
     "referenced_tweets_json","mentions_json","urls_json","hashtags_json","annotations_json",
-    "cashtags_json","media_keys_json")
+    "cashtags_json","media_keys_json","context_annotations")
+
 
   if (length(query) > 1) stop('Can only provide 1 query at a time')
-  print(nchar(query))
 
   start_time = prepare_time_arg(start_time)
   end_time = prepare_time_arg(end_time, TRUE)
@@ -109,8 +109,6 @@ twitter_get <- function(endpoint, ..., perseverance=10) {
   query = list(...)
   query = query[!sapply(query, is.null)]
   qs = paste(paste0(names(query), '=', as.character(query)),collapse='&')
-  message(nchar(qs))
-  #url = sprintf('https://api.twitter.com/2/%s?%s', endpoint, query)
   url = sprintf('https://api.twitter.com/2/%s', endpoint)
 
 
