@@ -20,7 +20,7 @@ set_bearer_token <- function() {
   bt = getPass::getPass(msg = "Enter your Twitter API Bearer Token")
   tf = token_file()
   saveRDS(bt, tf)
-  Sys.chmod(tf, mode='0400')
+  Sys.chmod(tf, mode='0600')
 }
 
 token_file <- function() {
