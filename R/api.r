@@ -48,7 +48,7 @@ twitter_archive_search <- function(query, start_time, end_time=NULL, path=getwd(
   ## finished csv files are marked as finished (when the download loop below is finished)
   if (!is.null(end_time)) {
     finished_csv_file = gsub('\\.csv', '_finished\\.csv', csv_file)
-    if (file.exists(finished_csv_file)) return(readr::read_csv(finished_csv_file, col_types=readr::cols()))
+    if (file.exists(finished_csv_file)) return(  if (!just_download) readr::read_csv(finished_csv_file, col_types=col_types))
   } else finished_csv_file = csv_file
 
   ## prepare start/end time
@@ -59,7 +59,7 @@ twitter_archive_search <- function(query, start_time, end_time=NULL, path=getwd(
   ## read the most recent id in the current data. This way the loop continues from the most recent tweet
   until_id = NULL
   if (file.exists(csv_file)) {
-    if (read_finished) return(readr::read_csv(csv_file))
+    if (read_finished) return(readr::read_csv(csv_file, col_types=col_types))
     message("NOTE: this search (query + time-frame) was started before, but didn't finish. Will now continue where it left off")
     end_point = get_end_point(csv_file)
     end_time = prepare_time_arg(end_point$end_time)
@@ -115,7 +115,7 @@ twitter_archive_search <- function(query, start_time, end_time=NULL, path=getwd(
     next_token = page$meta$next_token
   }
 
-  if (!just_download) readr::read_csv(finished_csv_file, col_types=readr::cols())
+  if (!just_download) readr::read_csv(finished_csv_file, col_types=col_types)
 }
 
 twitter_get <- function(endpoint, ..., perseverance=10) {
@@ -183,7 +183,7 @@ get_end_point <- function(csv_file) {
     date = as.POSIXct(x$created_at, format='%Y-%m-%dT%H:%M:%OSZ')
     list(until_id = min(acc$since_id, x$id, na.rm = T), end_time=min(acc$end_time, date, na.rm=T))
   }
-  readr::read_csv_chunked(csv_file, readr::AccumulateCallback$new(f, acc=list(until_id=NA, end_time=as.POSIXct('2100-01-01'))), col_types=readr::cols())
+  readr::read_csv_chunked(csv_file, readr::AccumulateCallback$new(f, acc=list(until_id=NA, end_time=as.POSIXct('2100-01-01'))), col_types=col_types)
 }
 
 prepare_time_arg <- function(time, end_time=F) {
@@ -196,3 +196,4 @@ prepare_time_arg <- function(time, end_time=F) {
   time
 }
 
+col_types = list(id=readr::col_character(), conversation_id=readr::col_character())
