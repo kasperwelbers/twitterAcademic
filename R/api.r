@@ -150,7 +150,9 @@ twitter_get <- function(endpoint, ..., perseverance=10) {
       mes = jsonlite::fromJSON(mes, flatten = F)
       mes = paste(paste(names(mes$errors), as.character(mes$errors), sep=':\n'), collapse='\n\n')
       stop(paste0("Oh shit, Twitter think's your request is bad (400 response status). This probably means something was wrong with your query\n\n", mes))
-    } else {
+    } else if (response$status_code == 401) {
+      stop('Got a 401 response status. There is probably something wrong with your token')
+    }else {
       message(sprintf("Something went wrong! Got this non-ok status code here: %s.\nFor now we'll just wait a few seconds and try again, but if this keeps failing let me know", response$status_code))
       Sys.sleep(5)
     }
@@ -196,4 +198,7 @@ prepare_time_arg <- function(time, end_time=F) {
   time
 }
 
-col_types = list(id=readr::col_character(), conversation_id=readr::col_character())
+col_types = list(id=readr::col_character(),
+                 author_id=readr::col_character(),
+                 in_reply_to_user_id = readr::col_character(),
+                 conversation_id=readr::col_character())
