@@ -1,3 +1,11 @@
+# DEPRECATION WARNING
+
+By now, this ad-hoc package outlived it's main purpose, since a more dedicated effort exists in the [academictwitteR](https://cran.r-project.org/web/packages/academictwitteR/index.html) package (the very similar name is pure coincidence, and testifies to our stunning originality).
+
+This package still works at the moment, but since this alternative exists we have little reason to add features or maintain this thing. So if you're looking for a package to use the Academic Twitter API, we strongly recommend using academictwitteR.
+
+I think there are also plans to integrate support for the Twitter V2 api (which is required for using the Academic Twitter licence) in the more longer running rtweet package, but it doesn't yet seem to be available. Anyway, you know how to Google, just saying.
+
 # twitterAcademic
 
 > Really, you're writing an R package for the Twitter API? You didn't bother to check and find out that there's already this excellent rtweet package out there?
